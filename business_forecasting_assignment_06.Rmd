@@ -1,0 +1,111 @@
+---
+title: "business_forecasting_assignment06"
+author: "Adwait Kalsekar"
+date: "2023-11-21"
+output: html_document
+---
+
+# ARIMA Model
+
+### Importing Libraries
+```{r}
+library(fpp)
+library(fpp2)
+library(forecast)
+```
+
+### Reading Dataset
+```{r}
+df <- read.csv("NJ_HPI.csv")
+head(df)
+```
+
+### Converting to Time Series
+```{r}
+df_ts <- ts(df$HPI.NJ, start=c(1975, 1), end=c(2023, 2), frequency=4)
+head(df_ts)
+```
+
+### Plotting the Time Series
+```{r}
+plot(df_ts)
+```
+
+### Finding Number of differences required for a stationary series
+```{r}
+ndiffs(df_ts)
+```
+
+### Finding Number of differences required for a seasonally stationary series
+```{r}
+nsdiffs(df_ts)
+```
+
+### Plotting ACF and PACF for the Time Series
+```{r}
+tsdisplay(df_ts)
+```
+
+### Setting Diff 1
+```{r}
+df_ts_diff1 <- diff(df_ts, 1)
+plot(df_ts_diff1)
+```
+
+### Plotting ACF and PACF for the Time Series with Diff 1
+```{r}
+tsdisplay(df_ts_diff1)
+```
+
+### ARIMA Model
+```{r}
+df_ts_arima <- auto.arima(df_ts, trace = TRUE, stepwise = FALSE)
+df_ts_arima
+```
+
+#### Analysis:
+> The best model comes out to be ARIMA(3,1,0)(0,0,2)[4] \
+> Which is of the form ARIMA(p,d,q)(P,D,Q)[s], where,
+
+* p: The order of the autoregressive (AR) component
+* d: The degree of differencing (the number of times the series is differenced to achieve stationarity)
+* q: The order of the moving average (MA) component
+* P: The seasonal order of the autoregressive component
+* D: The seasonal order of differencing
+* Q: The seasonal order of the moving average component
+* s: The length of the seasonal cycle
+
+> Looking at the Best model, it can be inferred that the model has:
+
+* An autoregressive component of order 3
+* A first-order differencing to make the series stationary
+* A moving average component of order 0
+* A seasonal moving average component of order 2
+* A seasonal cycle of length 4
+
+### Residual Analysis
+```{r}
+Acf(df_ts_arima$residuals)
+plot.ts(residuals(df_ts_arima))
+hist(df_ts_arima$residuals)
+tsdiag(df_ts_arima)
+```
+
+#### Interpretation:
+
+> Looking at the residuals we can see that the residuals are normally distributed with mean close to 0. \
+> Also the Acf shows no correlation between the residuals. \
+> There is no observable pattern in the plot of residuals. \
+> Hence, we can confirm that there is no more data to be extracted from the residuals.
+
+### Forecasts from ARIMA Model for next 5 periods
+```{r}
+attributes(df_ts_arima)
+df_ts_arima_forecast <- forecast(df_ts_arima, h=5)
+plot(df_ts_arima_forecast)
+```
+
+### Accuracy Measures
+```{r}
+accuracy(df_ts_arima_forecast)
+```
